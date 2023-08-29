@@ -33,7 +33,7 @@ func mainPostHandler(c *gin.Context) {
 }
 
 func main() {
-	// model.SetupExampleData(context.TODO())
+	model.SetupExampleData(context.TODO())
 	router := gin.Default()
 	a := routs.Authorizer{}
 	router.GET("/main", a.UserAuthHandler)
