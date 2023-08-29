@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"test_server/src/model"
+	"test_server/src/routing"
 )
 
 type res struct {
@@ -24,12 +29,14 @@ func mainPostHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 
-	fmt.Printf("\n%s, %d, %s\n", r.Name, r.Value)
+	fmt.Printf("\n%s, %d\n", r.Name, r.Value)
 }
 
 func main() {
+	// model.SetupExampleData(context.TODO())
 	router := gin.Default()
-	router.GET("/main", mainGetHandler)
+	a := routs.Authorizer{}
+	router.GET("/main", a.UserAuthHandler)
 	router.POST("/main", mainPostHandler)
 	router.Run(":8000")
 }
