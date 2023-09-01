@@ -2,27 +2,30 @@ package routs
 
 import (
 	"net/http"
+	"test_server/src/config"
+	"test_server/src/model"
+	"test_server/src/tokens"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 )
 
-type Claims struct {
-	jwt.StandardClaims
-}
-type Authorizer struct {
-}
+func UserAuthHandler(c *gin.Context) {
+	cfg := config.GetConfig()
+	uuid := c.Param("uuid")
+	ta, err_a := tokens.GenAccesToken(c, uuid)
+	tr, err_r := tokens.GenRefreshToken(c, uuid)
 
-func (a *Authorizer) UserAuthHandler(c *gin.Context) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &Claims{
-		jwt.StandardClaims{
-			ExpiresAt: jwt.TimeFunc().Unix() + 60*60*24,
-			IssuedAt:  jwt.TimeFunc().Unix(),
-		},
-	})
-	t, err := token.SignedString([]byte("somesecretiugiuuhuygtrdes4567g8h98ojiugytfr6udi7f8giuho;ytrxiy7fuyigubyit6tyuvkey"))
-	if err != nil {
-		panic(err)
+	model.UpdateRefreshTokenForUser(c, tr, uuid)
+
+	if (err_a != nil) || (err_r != nil) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Can`t create token"})
+
+		if err_a != nil {
+			panic(err_a)
+		} else if err_r != nil {
+			panic(err_r)
+		}
 	}
-	c.JSON(http.StatusOK, t)
+
+	c.JSON(http.StatusOK, ta+cfg.GetTokenDelimiter()+tr)
 }
