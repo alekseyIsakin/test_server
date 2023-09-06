@@ -1,11 +1,16 @@
 package config
 
 type Config struct {
-	secret         string
+	secret_access  string
+	secret_refresh string
 	db             string
-	colletionUsers string
+	dbUsers        string
+	dbtokens       string
+	domain         string
 	dbURI          string
 	tokenDelimiter string
+	maxAgeRefresh  int
+	maxAgeAccess   int
 }
 
 var (
@@ -14,11 +19,16 @@ var (
 
 func Init() {
 	cfg = Config{
-		secret:         "S0|||e_\\/ery_5Ecret_K3y",
+		secret_access:  "S0|||e_/ery_5Ecret_K3y_F0rG4iN4c3S5",
+		secret_refresh: "S0|||e_/ery_5Ecret_K3y=foRgA1nR3fresh",
 		db:             "test_server",
-		colletionUsers: "users",
+		dbUsers:        "users",
+		dbtokens:       "tokens",
 		dbURI:          "mongodb://127.0.0.1:27017/",
+		domain:         "localhost",
 		tokenDelimiter: "%",
+		maxAgeAccess:   60 * 15,
+		maxAgeRefresh:  60 * 60 * 24 * 14,
 	}
 }
 
@@ -26,16 +36,35 @@ func GetConfig() Config {
 	return cfg
 }
 
-func (c *Config) GetSecret() string {
-	return c.secret
+func (c *Config) GetAccessSecret() string {
+	return c.secret_access
+}
+
+func (c *Config) GetRefreshSecret() string {
+	return c.secret_access
+}
+
+func (c *Config) GetMaxAgeAccess() int {
+	return c.maxAgeAccess
+}
+
+func (c *Config) GetMaxAgeRefresh() int {
+	return c.maxAgeRefresh
 }
 
 func (c *Config) GetDBPath() string {
 	return c.db
 }
 
-func (c *Config) GetUsersCollectionPath() string {
-	return c.colletionUsers
+func (c *Config) GetDBTokens() string {
+	return c.dbtokens
+
+}
+func (c *Config) GetDBUsers() string {
+	return c.dbUsers
+}
+func (c *Config) GetDomain() string {
+	return c.domain
 }
 
 func (c *Config) GetDBURI() string {

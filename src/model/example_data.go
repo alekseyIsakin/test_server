@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"test_server/src/config"
+	"time"
 
 	// "github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,15 +29,39 @@ func SetupExampleData(ctx context.Context) {
 		panic(err)
 	}
 
-	coll := client.
-		Database(cfg.GetDBPath()).
-		Collection(cfg.GetUsersCollectionPath())
+	{
+		coll := client.
+			Database(cfg.GetDBPath()).
+			Collection(cfg.GetDBUsers())
 
-	if _, err := coll.DeleteMany(ctx, bson.D{}); err != nil {
-		panic(err)
+		if _, err := coll.DeleteMany(ctx, bson.D{}); err != nil {
+			panic(err)
+		}
+		if _, err := coll.InsertMany(ctx, test_value); err != nil {
+			panic(err)
+		}
 	}
-	if _, err := coll.InsertMany(ctx, test_value); err != nil {
-		panic(err)
+	{
+		coll := client.
+			Database(cfg.GetDBPath()).
+			Collection(cfg.GetDBTokens())
+		if _, err := coll.DeleteMany(ctx, bson.D{}); err != nil {
+			panic(err)
+		}
+
+		for _, v := range test_value {
+			if _, err := coll.InsertOne(
+				ctx,
+				RToken{
+					UUID:   v.(User).UUID,
+					Issued: time.Now().Unix(),
+					Expire: time.Now().Unix() + 60*60*24*6,
+					Token:  []byte(""),
+				},
+			); err != nil {
+				panic(err)
+			}
+		}
 	}
 
 	defer func() {

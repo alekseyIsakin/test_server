@@ -17,7 +17,7 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/auth/:uuid", routs.UserAuthHandler)
-	// router.POST("/refr", mainPostHandler)
+	router.GET("/refr", routs.RenewRefreshToken)
 
 	err := router.Run(":8000")
 	if err != nil {
