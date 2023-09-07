@@ -1,13 +1,13 @@
 package tokens
 
 import (
-	"net/http"
-	"test_server/src/config"
-	"test_server/src/model"
-
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	g_uuid "github.com/google/uuid"
+	"net/http"
+	"test_server/src/config"
+	"test_server/src/model"
 )
 
 type AccesClaims struct {
@@ -24,8 +24,8 @@ func GenAccesToken(c *gin.Context, uuid string) (string, error) {
 	user := model.FindUserByUUID(c, uuid)
 
 	if user.UUID == "" {
-		c.JSON(http.StatusBadRequest, "Wrong user id")
-		panic("Wrong user id: " + uuid)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Wrong user id"})
+		return "", fmt.Errorf("wrong user id: %s", uuid)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &AccesClaims{
