@@ -8,17 +8,15 @@ import (
 	"test_server/src/tokens"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 )
 
 func UserAuthHandler(c *gin.Context) {
 	cfg := config.GetConfig()
 	uuid := c.Param("uuid")
-	ta, err_a := tokens.GenAccesToken(c, uuid)
-	tr, err_r := tokens.GenRefreshToken(c, uuid)
-	tr = base64.RawURLEncoding.EncodeToString([]byte(tr))
+	atoken, err_a := tokens.GenAccesToken(c, uuid)
+	rtoken, err_r := tokens.GenRefreshToken(c, uuid)
 
-	model.UpdateRefreshTokenForUser(c, tr, uuid)
+	model.UpdateRefreshTokenForUser(c, rtoken, uuid)
 
 	if err_a != nil || err_r != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Can`t create token"})
@@ -27,14 +25,14 @@ func UserAuthHandler(c *gin.Context) {
 
 	c.SetCookie(
 		"refresh",
-		tr,
+		base64.RawURLEncoding.EncodeToString([]byte(rtoken)),
 		cfg.GetMaxAgeRefresh(),
 		"/",
 		cfg.GetDomain(),
 		true,
 		true)
 
-	c.JSON(http.StatusOK, ta+cfg.GetTokenDelimiter()+tr)
+	c.JSON(http.StatusOK, atoken+cfg.GetTokenDelimiter()+rtoken)
 }
 
 func RenewRefreshToken(c *gin.Context) {
@@ -43,17 +41,29 @@ func RenewRefreshToken(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, "wrong refresh token")
-		panic(err)
+		return
 	}
-	token, _ := jwt.DecodeSegment(cr)
-	uuid, err := tokens.ValidRefreshToken(c, string(token), []byte(cfg.GetRefreshSecret()))
+	token, _ := base64.RawURLEncoding.DecodeString(cr)
 
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, "cant provide new token")
-		panic(err)
+		return
 	}
 
-	model.ReplaceRefreshTokenForUser(c, string(token), uuid)
+	rtoken, err := model.ReplaceRefreshTokenForUser(c, string(token))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, "wrong token"+rtoken)
+		return
+	}
+
+	c.SetCookie(
+		"refresh",
+		base64.RawURLEncoding.EncodeToString([]byte(rtoken)),
+		cfg.GetMaxAgeRefresh(),
+		"/",
+		cfg.GetDomain(),
+		true,
+		true)
 
 	c.JSON(http.StatusOK, "")
 }

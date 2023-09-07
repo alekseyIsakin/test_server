@@ -1,13 +1,13 @@
 package tokens
 
 import (
-	"fmt"
 	"net/http"
 	"test_server/src/config"
 	"test_server/src/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 )
 
 type AccesClaims struct {
@@ -16,31 +16,6 @@ type AccesClaims struct {
 
 type RefreshClaims struct {
 	jwt.StandardClaims
-}
-
-func ValidRefreshToken(c *gin.Context, refreshToken string, secret []byte) (string, error) {
-
-	token, err := jwt.ParseWithClaims(
-		string(refreshToken),
-		&RefreshClaims{},
-		func(tkn *jwt.Token) (interface{}, error) {
-			if _, ok := tkn.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signinig method")
-			}
-			return secret, nil
-		})
-
-	if err != nil {
-		return "", err
-	}
-	now := jwt.TimeFunc().Unix()
-	if claim, ok := token.Claims.(*RefreshClaims); ok &&
-		token.Valid &&
-		claim.ExpiresAt > now {
-		return claim.Id, nil
-	}
-
-	return "", fmt.Errorf("invalid token")
 }
 
 func GenAccesToken(c *gin.Context, uuid string) (string, error) {
@@ -66,18 +41,9 @@ func GenAccesToken(c *gin.Context, uuid string) (string, error) {
 	return t, err
 }
 
-func GenRefreshToken(c *gin.Context, uuid string) (string, error) {
+func GenRefreshToken(c *gin.Context, guid string) (string, error) {
 	cfg := config.GetConfig()
+	x := uuid.New()
 
-	r_token := jwt.NewWithClaims(jwt.SigningMethodHS512, &RefreshClaims{
-		jwt.StandardClaims{
-			Id:        uuid,
-			IssuedAt:  jwt.TimeFunc().Unix(),
-			ExpiresAt: jwt.TimeFunc().Unix() + 60*60*24*14,
-		},
-	})
-
-	t, err := r_token.SignedString([]byte(cfg.GetRefreshSecret()))
-
-	return t, err
+	return guid + cfg.GetTokenDelimiter() + x.String(), nil
 }

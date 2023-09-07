@@ -3,8 +3,10 @@ package model
 import (
 	"context"
 	"fmt"
+	"strings"
 	"test_server/src/config"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,11 +24,21 @@ type RToken struct {
 	Token  []byte `bson:"rtoken"`
 }
 
-func ReplaceRefreshTokenForUser(ctx context.Context, old_token, uuid string) error {
+func ReplaceRefreshTokenForUser(ctx context.Context, old_token string) (string, error) {
 	cfg := config.GetConfig()
 	client, err := mongo.
 		Connect(ctx, options.Client().
 			ApplyURI(cfg.GetDBURI()))
+
+	if err != nil {
+		panic(err)
+	}
+	split := strings.Split(old_token, cfg.GetTokenDelimiter())
+
+	if len(split) <= 1 {
+		return "", fmt.Errorf("wrong token format")
+	}
+	guid := split[0]
 
 	defer func() {
 		if err := client.Disconnect(ctx); err != nil {
@@ -34,30 +46,24 @@ func ReplaceRefreshTokenForUser(ctx context.Context, old_token, uuid string) err
 		}
 	}()
 
-	if err != nil {
-		panic(err)
-	}
-
 	coll := client.
 		Database(cfg.GetDBPath()).
 		Collection(cfg.GetDBTokens())
 	res := RToken{}
-	coll.FindOne(ctx, bson.D{{Key: "uuid", Value: uuid}}).Decode(&res)
+	coll.FindOne(ctx, bson.D{{Key: "uuid", Value: guid}}).Decode(&res)
 
-	// r_token_hash, _ := bcrypt.GenerateFromPassword([]byte(new_token), 14)
-
-	filter := bson.D{{Key: "uuid", Value: uuid}, {}}
-	update := bson.D{{
-		Key: "$set",
-		Value: RToken{
-			Token: []byte{0, 1},
-		},
-	}}
-
-	if _, err := coll.UpdateOne(ctx, filter, update); err != nil {
-		return fmt.Errorf("")
+	if res.UUID == "" {
+		return "", fmt.Errorf("invalid token")
 	}
-	return nil
+	if err := bcrypt.CompareHashAndPassword(res.Token, []byte(old_token)); err != nil {
+		return "", fmt.Errorf("invalid token")
+	}
+
+	new_token := guid + cfg.GetTokenDelimiter() + uuid.NewString()
+
+	UpdateRefreshTokenForUser(ctx, new_token, guid)
+
+	return new_token, nil
 }
 
 func UpdateRefreshTokenForUser(ctx context.Context, token, uuid string) bool {

@@ -2,7 +2,6 @@ package config
 
 type Config struct {
 	secret_access  string
-	secret_refresh string
 	db             string
 	dbUsers        string
 	dbtokens       string
@@ -20,7 +19,6 @@ var (
 func Init() {
 	cfg = Config{
 		secret_access:  "S0|||e_/ery_5Ecret_K3y_F0rG4iN4c3S5",
-		secret_refresh: "S0|||e_/ery_5Ecret_K3y=foRgA1nR3fresh",
 		db:             "test_server",
 		dbUsers:        "users",
 		dbtokens:       "tokens",
@@ -28,7 +26,7 @@ func Init() {
 		domain:         "localhost",
 		tokenDelimiter: "%",
 		maxAgeAccess:   60 * 15,
-		maxAgeRefresh:  60 * 60 * 24 * 14,
+		maxAgeRefresh:  60,
 	}
 }
 
@@ -37,10 +35,6 @@ func GetConfig() Config {
 }
 
 func (c *Config) GetAccessSecret() string {
-	return c.secret_access
-}
-
-func (c *Config) GetRefreshSecret() string {
 	return c.secret_access
 }
 
