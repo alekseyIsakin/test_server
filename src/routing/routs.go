@@ -56,11 +56,11 @@ func RenewRefreshToken(c *gin.Context) {
 
 	uuid := strings.Split(string(token), cfg.GetTokenDelimiter())[0]
 
-	atoken, err := tokens.GenAccesToken(c, uuid)
-	rtoken, err := tokens.GenRefreshToken(c, uuid)
+	atoken, err_a := tokens.GenAccesToken(c, uuid)
+	rtoken, err_r := tokens.GenRefreshToken(c, uuid)
 
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "cant create token"})
+	if err_a != nil || err_r != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cant create token"})
 		return
 	}
 	model.UpdateRefreshTokenForUser(c, rtoken, uuid)
