@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
+	g_uuid "github.com/google/uuid"
 )
 
 type AccesClaims struct {
@@ -41,9 +41,9 @@ func GenAccesToken(c *gin.Context, uuid string) (string, error) {
 	return t, err
 }
 
-func GenRefreshToken(c *gin.Context, guid string) (string, error) {
+func GenRefreshToken(c *gin.Context, uuid string) (string, error) {
 	cfg := config.GetConfig()
-	x := uuid.New()
+	x := g_uuid.New()
 
-	return guid + cfg.GetTokenDelimiter() + x.String(), nil
+	return uuid + cfg.GetTokenDelimiter() + x.String(), nil
 }

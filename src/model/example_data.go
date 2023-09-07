@@ -3,21 +3,19 @@ package model
 import (
 	"context"
 	"test_server/src/config"
-	"time"
 
-	// "github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var test_value = []interface{}{
-	User{Name: "User1", UUID: "1"}, //uuid.New().String()},
-	User{Name: "User2", UUID: "2"}, //uuid.New().String()},
-	User{Name: "Uu3", UUID: "3"},   //uuid.New().String()},
-	User{Name: "UW4", UUID: "4"},   //uuid.New().String()},
-	User{Name: "Uii5", UUID: "5"},  //uuid.New().String()},
-	User{Name: "Usr6", UUID: "6"},  //uuid.New().String()},
+	User{Name: "User1", UUID: "1"},
+	User{Name: "User2", UUID: "2"},
+	User{Name: "Uu3", UUID: "3"},
+	User{Name: "UW4", UUID: "4"},
+	User{Name: "Uii5", UUID: "5"},
+	User{Name: "Usr6", UUID: "6"},
 }
 
 func SetupExampleData(ctx context.Context) {
@@ -54,8 +52,8 @@ func SetupExampleData(ctx context.Context) {
 				ctx,
 				RToken{
 					UUID:   v.(User).UUID,
-					Issued: time.Now().Unix(),
-					Expire: time.Now().Unix() + 60*60*24*6,
+					Issued: 0,
+					Expire: 0,
 					Token:  []byte(""),
 				},
 			); err != nil {

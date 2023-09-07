@@ -6,7 +6,6 @@ import (
 	"strings"
 	"test_server/src/config"
 
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -24,19 +23,19 @@ type RToken struct {
 	Token  []byte `bson:"rtoken"`
 }
 
-func ReplaceRefreshTokenForUser(ctx context.Context, old_token string) (string, error) {
+func ValidateRToken(ctx context.Context, old_token string) error {
 	cfg := config.GetConfig()
 	client, err := mongo.
 		Connect(ctx, options.Client().
 			ApplyURI(cfg.GetDBURI()))
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 	split := strings.Split(old_token, cfg.GetTokenDelimiter())
 
 	if len(split) <= 1 {
-		return "", fmt.Errorf("wrong token format")
+		return fmt.Errorf("wrong token format")
 	}
 	guid := split[0]
 
@@ -53,17 +52,12 @@ func ReplaceRefreshTokenForUser(ctx context.Context, old_token string) (string, 
 	coll.FindOne(ctx, bson.D{{Key: "uuid", Value: guid}}).Decode(&res)
 
 	if res.UUID == "" {
-		return "", fmt.Errorf("invalid token")
+		return fmt.Errorf("invalid token")
 	}
 	if err := bcrypt.CompareHashAndPassword(res.Token, []byte(old_token)); err != nil {
-		return "", fmt.Errorf("invalid token")
+		return err
 	}
-
-	new_token := guid + cfg.GetTokenDelimiter() + uuid.NewString()
-
-	UpdateRefreshTokenForUser(ctx, new_token, guid)
-
-	return new_token, nil
+	return nil
 }
 
 func UpdateRefreshTokenForUser(ctx context.Context, token, uuid string) bool {
@@ -79,7 +73,7 @@ func UpdateRefreshTokenForUser(ctx context.Context, token, uuid string) bool {
 	}()
 
 	if err != nil {
-		panic(err)
+		return false
 	}
 
 	coll := client.
@@ -91,7 +85,7 @@ func UpdateRefreshTokenForUser(ctx context.Context, token, uuid string) bool {
 	update := bson.D{{
 		Key: "$set",
 		Value: bson.D{{
-			"rtoken", r_token_hash,
+			Key: "rtoken", Value: r_token_hash,
 		}},
 	}}
 
